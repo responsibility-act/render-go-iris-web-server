@@ -1,11 +1,11 @@
-# Go Gin Web Server
+# Go Iris Web Server
 
-This repo can be used as a starting point to deploy [Go](https://golang.org/) web applications on Render.
+This repo can be used as a starting point to deploy [Go](https://go.dev/) web applications on Render.
 
-It is based on the [realtime chat](https://github.com/gin-gonic/examples/tree/master/realtime-advanced) example powered by the [Gin](https://github.com/gin-gonic/gin) web framework.
+It is based on the [render-go-iris-web-server examples](https://github.com/render-examples/go-gin-web-server) example powered by the [Iris](https://github.com/kataras/iris) web framework.
 
-The sample app is up at https://go-gin.onrender.com.
+The sample app is up at https://go-iris.onrender.com.
 
 ## Deployment
 
-See the guide at https://render.com/docs/deploy-go-gin.
+See the guide at https://render.com/docs/deploy-go-iris.

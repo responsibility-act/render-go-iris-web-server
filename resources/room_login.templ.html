@@ -48,8 +48,8 @@
             <li class="active"><a href="#">Demo</a></li>
             <li><a href="https://www.w3.org/TR/2009/WD-eventsource-20091029/">W3 Standard</a></li>
             <li><a href="https://caniuse.com/#feat=eventsource">Browser Support</a></li>
-            <li><a href="https://gin-gonic.github.io/gin/">Gin Framework</a></li>
-            <li><a href="https://github.com/gin-gonic/gin/tree/master/examples/realtime-advanced">GitHub</a></li>
+            <li><a href="https://www.iris-go.com">Iris Framework</a></li>
+            <li><a href="https://github.com/kataras/iris/tree/master/_examples">GitHub</a></li>
           </ul>
         </div><!-- /.nav-collapse -->
       </div><!-- /.container -->
@@ -59,7 +59,6 @@
             <div class="container">
                 <h1>Server-Sent Events in Go</h1>
                 <p>Server-sent events (SSE) is a technology where a browser receives automatic updates from a server via HTTP connection. It is not websockets. <a href="https://www.html5rocks.com/en/tutorials/eventsource/basics/">Learn more.</a></p>
-                <p>The chat and the charts data is provided in realtime using the SSE implementation of <a href="https://github.com/gin-gonic/gin/blob/15b0c49da556d58a3d934b86e3aa552ff224026d/examples/realtime-chat/main.go#L23-L32">Gin Framework</a>.</p>
                 <div class="row">
                     <div class="col-md-8">
                         <div id="chat-scroll" style="overflow-y:scroll; overflow-x:scroll; height:290px">
@@ -101,7 +100,6 @@
                         <p>
                         <span style="font-size:20px; color:#1f77b4">◼︎</span> Users<br>
                         <span style="font-size:20px; color:#ff7f0e">◼︎</span> Inbound messages / sec<br>
-                        <span style="font-size:20px; color:#2ca02c">◼︎</span> Outbound messages / sec<br>
                         </p>
                     </div>
                 </div>
@@ -134,35 +132,21 @@
             <div class="row">
                 <h2>MIT Open Sourced</h2>
                 <ul>
-                    <li><a href="https://github.com/render-examples/go-gin-web-server">This demo website (JS and Go)</a></li>
-                    <li><a href="https://github.com/manucorporat/sse">The SSE implementation in Go</a></li>
-                    <li><a href="https://github.com/gin-gonic/gin">The Web Framework (Gin)</a></li>
+                    <li><a href="https://github.com/responsibility-act/render-go-iris-web-server">This demo website (JS and Go)</a></li>
+                    <li><a href="https://github.com/r3labs/sse">The SSE implementation in Go</a></li>
+                    <li><a href="https://github.com/kataras/iris">The Web Framework (Iris)</a></li>
                 </ul>
                 <div class="col-md-6">
                 <script src="/static/prismjs.min.js"></script>
                     <h3>Server-side (Go)</h3>
-                    <pre><code class="language-go">func streamRoom(c *gin.Context) {
-    roomid := c.ParamValue(&quot;roomid&quot;)
-    listener := openListener(roomid)
-    statsTicker := time.NewTicker(1 * time.Second)
-    defer closeListener(roomid, listener)
-    defer statsTicker.Stop()
-
-    c.Stream(func(w io.Writer) bool {
-        select {
-        case msg := &lt;-listener:
-            c.SSEvent(&quot;message&quot;, msg)
-        case &lt;-statsTicker.C:
-            c.SSEvent(&quot;stats&quot;, Stats())
-        }
-        return true
-    })
+                    <pre><code class="language-go">func listenEvents() iris.Handler {
+    return iris.FromStd(sseServer.ServeHTTP)
 }</code></pre>
                 </div>
                 <div class="col-md-6">
                     <h3>Client-side (JS)</h3>
                     <pre><code class="language-javascript">function StartSSE(roomid) {
-    var source = new EventSource('/stream/'+roomid);
+    var source = new EventSource('/events?stream='+roomid);
     source.addEventListener('message', newChatMessage, false);
     source.addEventListener('stats', stats, false);
 }</code></pre>
@@ -171,37 +155,42 @@
             <div class="row">
                 <div class="col-md-12">
                     <h3>SSE package</h3>
-                    <pre><code class="language-go">import &quot;github.com/manucorporat/sse&quot;
+                    <pre><code class="language-go">import &quot;github.com/r3labs/sse/v2&quot;
 
-func httpHandler(w http.ResponseWriter, req *http.Request) {
-    // data can be a primitive like a string, an integer or a float
-    sse.Encode(w, sse.Event{
-        Event: &quot;message&quot;,
-        Data:  &quot;some data\nmore data&quot;,
-    })
+var sseServer *sse.Server
 
-    // also a complex type, like a map, a struct or a slice
-    sse.Encode(w, sse.Event{
-        Id:    &quot;124&quot;,
-        Event: &quot;message&quot;,
-        Data: map[string]interface{}{
-            &quot;user&quot;:    &quot;manu&quot;,
-            &quot;date&quot;:    time.Now().Unix(),
-            &quot;content&quot;: &quot;hi!&quot;,
-        },
-    })
-}</code></pre>
+func init() {
+    // There are many sse implementations out there,
+    // this is just an example of one of them.
+    sseServer = sse.New()
+    sseServer.AutoStream = true
+    sseServer.AutoReplay = true
+
+    sseServer.OnSubscribe = func(streamID string, sub *sse.Subscriber) {
+        users.Add("connected", 1)
+    }
+
+    sseServer.OnUnsubscribe = func(streamID string, sub *sse.Subscriber) {
+        users.Add("disconnected", 1)
+    }
+}
+
+func listenEvents() iris.Handler {
+    return iris.FromStd(sseServer.ServeHTTP)
+}
+
+</code></pre>
 <pre>event: message
 data: some data\\nmore data
 
 id: 124
 event: message
-data: {&quot;content&quot;:&quot;hi!&quot;,&quot;date&quot;:1431540810,&quot;user&quot;:&quot;manu&quot;}</pre>
+data: {&quot;content&quot;:&quot;hi!&quot;,&quot;date&quot;:1431540810,&quot;user&quot;:&quot;john doe&quot;}</pre>
                 </div>
             </div>
             <hr>
             <footer>
-                <p>Created with <span class="glyphicon glyphicon-heart"></span> by <a href="https://github.com/manucorporat">Manu Martinez-Almeida</a></p>
+                <p>Created with <span class="glyphicon glyphicon-heart"></span> by <a href="https://github.com/manucorporat">Manu Martinez-Almeida (gin)</a> and <a href="https://github.com/kataras" >Gerasimos (Makis) Maropoulos (iris)</a></a></p>
             </footer>
         </div>
     </body>

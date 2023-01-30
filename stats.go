@@ -26,7 +26,7 @@ func statsWorker() {
 
 		mutexStats.Lock()
 		savedStats = map[string]uint64{
-			"timestamp":  uint64(time.Now().Unix()),
+			"Timestamp":  uint64(time.Now().Unix()),
 			"HeapInuse":  stats.HeapInuse,
 			"StackInuse": stats.StackInuse,
 			"Mallocs":    stats.Mallocs - lastMallocs,

@@ -48,7 +48,6 @@ function StartEpoch(timestamp) {
         historySize: 10,
         data: [
             {values: defaultData},
-            {values: defaultData},
             {values: defaultData}
         ]
     });
@@ -59,7 +58,7 @@ function StartSSE(roomid) {
         alert("EventSource is not enabled in this browser");
         return;
     }
-    var source = new EventSource('/stream/'+roomid);
+    var source = new EventSource('/events?stream='+roomid);
     source.addEventListener('message', newChatMessage, false);
     source.addEventListener('stats', stats, false);
 }
@@ -73,7 +72,7 @@ function stats(e) {
 
 function parseJSONStats(e) {
     var data = jQuery.parseJSON(e);
-    var timestamp = data.timestamp;
+    var timestamp = data.Timestamp;
 
     var heap = [
         {time: timestamp, y: data.HeapInuse},
@@ -87,7 +86,6 @@ function parseJSONStats(e) {
     var messages = [
         {time: timestamp, y: data.Connected},
         {time: timestamp, y: data.Inbound},
-        {time: timestamp, y: data.Outbound}
     ];
 
     return {

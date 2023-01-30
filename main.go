@@ -2,17 +2,17 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"runtime"
 
-	"github.com/gin-gonic/gin"
+	"github.com/kataras/iris/v12"
+	"github.com/kataras/iris/v12/middleware/recover"
 )
 
 func main() {
 	ConfigRuntime()
 	StartWorkers()
-	StartGin()
+	StartIris()
 }
 
 // ConfigRuntime sets the number of operating system threads.
@@ -27,24 +27,24 @@ func StartWorkers() {
 	go statsWorker()
 }
 
-// StartGin starts gin web server with setting router.
-func StartGin() {
-	gin.SetMode(gin.ReleaseMode)
+// StartIris starts Iris web server with setting router.
+func StartIris() {
+	app := iris.New()
+	app.Use(recover.New(), rateLimit)
+	app.RegisterView(iris.HTML("./resources", ".html"))
 
-	router := gin.New()
-	router.Use(rateLimit, gin.Recovery())
-	router.LoadHTMLGlob("resources/*.templ.html")
-	router.Static("/static", "resources/static")
-	router.GET("/", index)
-	router.GET("/room/:roomid", roomGET)
-	router.POST("/room-post/:roomid", roomPOST)
-	router.GET("/stream/:roomid", streamRoom)
+	app.HandleDir("/static", "resources/static", iris.DirOptions{
+		Compress: true,
+	})
+	app.Get("/", index)
+	app.Get("/room/{roomid}", roomGET)
+	app.Post("/room-post/{roomid}", roomPOST)
+	app.Get("/events", listenEvents())
 
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
 	}
-	if err := router.Run(":" + port); err != nil {
-        log.Panicf("error: %s", err)
-	}
+
+	app.Listen(":" + port)
 }
